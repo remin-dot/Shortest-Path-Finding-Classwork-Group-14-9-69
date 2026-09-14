@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "source_csv": "data/calibration_measurements.csv",
+  "sensors": {
+    "sharp_left": {
+      "degree": 2,
+      "coefficients": [
+        0.001460068904546989,
+        -1.5702444416826042,
+        455.17413922019216
+      ],
+      "rmse_mm": 13.046116672273131,
+      "r2": 0.9766581265975,
+      "samples": 12,
+      "raw_min": 117.0,
+      "raw_max": 669.0,
+      "reference_min_mm": 50.0,
+      "reference_max_mm": 300.0
+    },
+    "sharp_right": {
+      "degree": 2,
+      "coefficients": [
+        0.0014099729213424585,
+        -1.4735208415310783,
+        420.86742274423153
+      ],
+      "rmse_mm": 13.956885577400453,
+      "r2": 0.973285304454311,
+      "samples": 12,
+      "raw_min": 105.0,
+      "raw_max": 638.0,
+      "reference_min_mm": 50.0,
+      "reference_max_mm": 300.0
+    }
+  }
+}

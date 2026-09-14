@@ -1,0 +1,287 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><title>BFS vs A* RoboMaster</title>
+<style>
+@page { size: A4; margin: 24mm 20mm 22mm 22mm;
+  @top-left { content: "หน้า " counter(page); font-family: "Leelawadee UI", Tahoma, sans-serif; font-size: 10pt; } }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { font-family: "Leelawadee UI", Tahoma, sans-serif; font-size: 11pt; line-height: 1.75; color: #000; margin: 0; }
+h1 { font-size: 16pt; font-weight: 700; margin: 16pt 0 6pt; break-after: avoid; }
+h2 { font-size: 13pt; font-weight: 700; margin: 12pt 0 4pt; break-after: avoid; }
+p { margin: 0 0 6pt; } ol, ul { margin: 0 0 6pt; padding-left: 20pt; } li { margin-bottom: 2pt; }
+.pb { break-before: page; }
+.mark { position: absolute; color: #fff; font-size: 1px; }
+code, pre { font-family: Consolas, monospace; }
+code { font-size: 10pt; }
+pre.code, pre.eq { font-size: 10pt; line-height: 1.5; margin: 4pt 0 6pt 12pt; white-space: pre-wrap; break-inside: avoid; }
+pre.eq { font-size: 10.5pt; }
+table { border-collapse: collapse; width: 100%; margin: 0 0 8pt; font-size: 10pt; line-height: 1.45; break-inside: auto; }
+tr { break-inside: avoid; }
+th { background: #e8e8e8; font-weight: 700; text-align: left; border: 1px solid #9a9a9a; padding: 3pt 6pt; }
+td { border: 1px solid #9a9a9a; padding: 3pt 6pt; vertical-align: middle; }
+td.num { text-align: right; font-family: Consolas, monospace; white-space: nowrap; }
+.cap { font-size: 10pt; margin: 8pt 0 3pt; break-after: avoid; }
+.fig { text-align: center; margin: 6pt 0 8pt; break-inside: avoid; }
+.fig img { display: block; margin: 0 auto; }
+.figcap { font-size: 10pt; text-align: center; margin: 3pt 0 8pt; }
+table.grid { width: auto; margin: 8pt auto 2pt; font-size: 11pt; }
+table.grid td { width: 46pt; height: 40pt; text-align: center; border: 1px solid #333; line-height: 1.25; }
+table.grid td.g-x { background: #5f5f5f; color: #fff; font-weight: 700; }
+table.grid td.g-sg { background: #d9d9d9; }
+table.grid th.g-ax { background: none; border: none; text-align: center; font-weight: 400; color: #555; }
+table.grid th { background: none; border: none; }
+.cover { text-align: center; padding-top: 80pt; }
+.cover .title { display: block; font-size: 21pt; font-weight: 700; line-height: 1.55; }
+.cover .sub { font-size: 13pt; margin: 18pt 0 22pt; }
+.cover .abstract { font-size: 10.5pt; margin: 0 40pt 40pt; line-height: 1.8; }
+.cover .by { font-weight: 700; font-size: 13pt; margin-bottom: 4pt; }
+table.members { width: auto; margin: 0 auto 40pt; font-size: 11pt; }
+table.members td { border: none; padding: 0 8pt; text-align: left; }
+.cover .foot { margin-bottom: 26pt; }
+.toc-title { margin-top: 0; }
+.toc-row { display: flex; align-items: baseline; font-size: 10.5pt; line-height: 1.9; }
+.toc-row.l2 { padding-left: 16pt; }
+.toc-row .dots { flex: 1; border-bottom: 1.5px dotted #555; margin: 0 4pt; transform: translateY(-4pt); }
+.toc-row .p { min-width: 16pt; text-align: right; }
+.toc + h1, .toc-row.l1 .t { }
+</style></head><body><section class="cover">
+<div class="title">รายงานผลการทดลอง Classwork 14-9-69<br>การค้นหาเส้นทางที่สั้นที่สุดด้วย BFS และ A*<br>บน DJI RoboMaster EP</div>
+<p class="sub">Shortest Path Finding with BFS and A* on a Weighted 4×4 Grid using DJI RoboMaster EP</p>
+<p class="abstract">การทดลองวางแผนเส้นทางบนสนามกริด 4×4 ที่มีสิ่งกีดขวางและต้นทุนต่อช่อง
+เปรียบเทียบอัลกอริทึม BFS กับ A* ทั้งในเชิงแผน (จำนวนก้าว ต้นทุนรวม จำนวนโหนดที่ขยาย)
+และในเชิงการเคลื่อนที่จริงของหุ่นยนต์ (เวลา ความคลาดเคลื่อน การชนสิ่งกีดขวาง และการถึงเป้าหมาย)
+จากการรันบนหุ่นยนต์จริง 6 รอบ</p>
+<p class="by">จัดทำโดย</p><table class="members"><tr><td>นาย ดาราชัย เดชะพันธุ์</td><td>รหัสนักศึกษา 6810110109</td></tr><tr><td>นาย ศุภกิตติ์ เชี่ยวหมอน</td><td>รหัสนักศึกษา 6810110354</td></tr><tr><td>นาย ทวีรัตน์ ยอดเสถียร</td><td>รหัสนักศึกษา 6810110594</td></tr><tr><td>นาย อาณัส อาเก๊ะ</td><td>รหัสนักศึกษา 6810110755</td></tr></table>
+<p class="foot">การทดลอง — Graph Search: Breadth-First Search และ A* Search</p>
+<p class="foot2">สาขาวิชาวิศวกรรมปัญญาประดิษฐ์ (AI Engineering)<br>คณะวิศวกรรมศาสตร์ มหาวิทยาลัยสงขลานครินทร์<br>
+กลุ่มโครงงาน: พบลาบไม่ทรายชื่อ (Phob_Labb_Mai_sarb_cheu)</p></section>
+<div class="pb"></div><h1 class="toc-title">สารบัญ</h1><div class="toc"><div class="toc-row l1"><span class="t">1. บทนำและวัตถุประสงค์ (Introduction and Objectives)</span><span class="dots"></span><span class="p">4</span></div><div class="toc-row l2"><span class="t">1.1 ที่มาของการทดลอง</span><span class="dots"></span><span class="p">4</span></div><div class="toc-row l2"><span class="t">1.2 วัตถุประสงค์</span><span class="dots"></span><span class="p">4</span></div><div class="toc-row l2"><span class="t">1.3 ขอบเขตของการทดลอง</span><span class="dots"></span><span class="p">4</span></div><div class="toc-row l1"><span class="t">2. อุปกรณ์และผังสนามทดลอง (Equipment and Field Layout)</span><span class="dots"></span><span class="p">5</span></div><div class="toc-row l2"><span class="t">2.1 อุปกรณ์ที่ใช้</span><span class="dots"></span><span class="p">5</span></div><div class="toc-row l2"><span class="t">2.2 ผังสนามกริด 4×4</span><span class="dots"></span><span class="p">5</span></div><div class="toc-row l2"><span class="t">2.3 การกำหนดต้นทุน (Cost Design)</span><span class="dots"></span><span class="p">6</span></div><div class="toc-row l1"><span class="t">3. ทฤษฎีที่เกี่ยวข้อง (Theoretical Background)</span><span class="dots"></span><span class="p">6</span></div><div class="toc-row l2"><span class="t">3.1 นิยามปัญหาในรูปกราฟ</span><span class="dots"></span><span class="p">6</span></div><div class="toc-row l2"><span class="t">3.2 การค้นหาแบบ Breadth-First Search</span><span class="dots"></span><span class="p">6</span></div><div class="toc-row l2"><span class="t">3.3 การค้นหาแบบ A*</span><span class="dots"></span><span class="p">6</span></div><div class="toc-row l2"><span class="t">3.4 ความแตกต่างระหว่าง BFS กับ A*</span><span class="dots"></span><span class="p">7</span></div><div class="toc-row l2"><span class="t">3.5 ความหมายของค่าพารามิเตอร์ต่อผลลัพธ์</span><span class="dots"></span><span class="p">7</span></div><div class="toc-row l1"><span class="t">4. การออกแบบโปรแกรม (Program Design)</span><span class="dots"></span><span class="p">7</span></div><div class="toc-row l2"><span class="t">4.1 โครงสร้างของโปรแกรม</span><span class="dots"></span><span class="p">7</span></div><div class="toc-row l2"><span class="t">4.2 การแยกชั้นควบคุมหุ่นยนต์ออกจากอัลกอริทึม</span><span class="dots"></span><span class="p">8</span></div><div class="toc-row l2"><span class="t">4.3 พารามิเตอร์ที่ตั้งค่าได้</span><span class="dots"></span><span class="p">8</span></div><div class="toc-row l2"><span class="t">4.4 ข้อมูลที่บันทึกในแต่ละรอบ</span><span class="dots"></span><span class="p">9</span></div><div class="toc-row l1"><span class="t">5. วิธีดำเนินการทดลอง (Experimental Procedure)</span><span class="dots"></span><span class="p">9</span></div><div class="toc-row l2"><span class="t">5.1 ขั้นตอนการทดลอง</span><span class="dots"></span><span class="p">9</span></div><div class="toc-row l2"><span class="t">5.2 คำสั่งที่ใช้และไฟล์ผลลัพธ์</span><span class="dots"></span><span class="p">10</span></div><div class="toc-row l2"><span class="t">5.3 มาตรการความปลอดภัย</span><span class="dots"></span><span class="p">10</span></div><div class="toc-row l1"><span class="t">6. ผลการทดลอง (Results)</span><span class="dots"></span><span class="p">11</span></div><div class="toc-row l2"><span class="t">6.1 ผลสรุปรายรอบ</span><span class="dots"></span><span class="p">11</span></div><div class="toc-row l2"><span class="t">6.2 เปรียบเทียบ BFS กับ A*</span><span class="dots"></span><span class="p">11</span></div><div class="toc-row l2"><span class="t">6.3 เส้นทางที่วางแผนและลำดับการขยายโหนด</span><span class="dots"></span><span class="p">12</span></div><div class="toc-row l2"><span class="t">6.4 เส้นทางจริงของหุ่นยนต์</span><span class="dots"></span><span class="p">13</span></div><div class="toc-row l2"><span class="t">6.5 เวลาการเคลื่อนที่รายช่อง</span><span class="dots"></span><span class="p">14</span></div><div class="toc-row l2"><span class="t">6.6 ค่าที่อ่านได้จากเซนเซอร์ ToF</span><span class="dots"></span><span class="p">15</span></div><div class="toc-row l1"><span class="t">7. การตรวจสอบความถูกต้อง (Verification)</span><span class="dots"></span><span class="p">16</span></div><div class="toc-row l2"><span class="t">7.1 การคำนวณต้นทุนเส้นทางด้วยมือ</span><span class="dots"></span><span class="p">16</span></div><div class="toc-row l2"><span class="t">7.2 ลำดับการขยายโหนดของ A*</span><span class="dots"></span><span class="p">16</span></div><div class="toc-row l2"><span class="t">7.3 การตรวจสอบตัวชี้วัดการถึงเป้าหมาย</span><span class="dots"></span><span class="p">17</span></div><div class="toc-row l1"><span class="t">8. อภิปรายผล (Discussion)</span><span class="dots"></span><span class="p">17</span></div><div class="toc-row l2"><span class="t">8.1 “สั้นที่สุด” ในเชิงจำนวนก้าวกับเชิงต้นทุน</span><span class="dots"></span><span class="p">17</span></div><div class="toc-row l2"><span class="t">8.2 ต้นทุนบนแผนที่ไม่ได้แปลงเป็นเวลาจริง</span><span class="dots"></span><span class="p">17</span></div><div class="toc-row l2"><span class="t">8.3 ความสม่ำเสมอของการเคลื่อนที่</span><span class="dots"></span><span class="p">17</span></div><div class="toc-row l2"><span class="t">8.4 จำนวนโหนดที่ขยาย</span><span class="dots"></span><span class="p">18</span></div><div class="toc-row l1"><span class="t">9. ข้อจำกัดและข้อเสนอแนะ (Limitations and Future Work)</span><span class="dots"></span><span class="p">18</span></div><div class="toc-row l2"><span class="t">9.1 ข้อจำกัดของการทดลอง</span><span class="dots"></span><span class="p">18</span></div><div class="toc-row l2"><span class="t">9.2 ข้อเสนอแนะสำหรับการพัฒนาต่อ</span><span class="dots"></span><span class="p">18</span></div><div class="toc-row l1"><span class="t">10. สรุปผลการทดลอง (Conclusion)</span><span class="dots"></span><span class="p">18</span></div><div class="toc-row l1"><span class="t">11. ภาคผนวก: ไฟล์ผลลัพธ์และวิธีทำซ้ำ (Appendix)</span><span class="dots"></span><span class="p">19</span></div></div>
+<div class="pb"></div>
+<h1 id="h00"><span class="mark">@@h00@@</span>1. บทนำและวัตถุประสงค์ (Introduction and Objectives)</h1>
+<h2 id="h01"><span class="mark">@@h01@@</span>1.1 ที่มาของการทดลอง</h2>
+<p>หุ่นยนต์เคลื่อนที่ที่ทราบแผนที่ล่วงหน้าต้องเลือกเส้นทางจากจุดเริ่มต้นไปยังเป้าหมายก่อนเริ่มเคลื่อนที่
+คำว่า “เส้นทางที่สั้นที่สุด” มีได้สองความหมาย คือเส้นทางที่ใช้จำนวนก้าวน้อยที่สุด และเส้นทางที่มีต้นทุนรวมน้อยที่สุด
+เมื่อทุกช่องมีต้นทุนเท่ากันสองความหมายนี้ให้ผลเหมือนกัน แต่เมื่อแต่ละช่องมีต้นทุนต่างกัน สองความหมายนี้อาจให้เส้นทางที่ต่างกันได้</p>
+<p>การทดลองนี้ใช้อัลกอริทึม Breadth-First Search (BFS) ซึ่งรับประกันจำนวนก้าวน้อยที่สุด
+และอัลกอริทึม A* ซึ่งรับประกันต้นทุนรวมน้อยที่สุดเมื่อใช้ heuristic ที่ไม่ประเมินเกินจริง
+บนสนามกริด 4×4 ขนาดช่องละ 0.60 เมตร ที่มีสิ่งกีดขวาง 3 ช่องและมีต้นทุนกำกับทุกช่องตามใบงาน
+จากนั้นสั่ง DJI RoboMaster EP ให้เดินตามเส้นทางของแต่ละอัลกอริทึมจริง
+เพื่อดูว่าความแตกต่างในเชิงแผนส่งผลต่อการเคลื่อนที่จริงของหุ่นยนต์อย่างไร</p>
+<h2 id="h02"><span class="mark">@@h02@@</span>1.2 วัตถุประสงค์</h2>
+<ol>
+<li>เพื่อนิยามสนามกริดที่มีสิ่งกีดขวางและต้นทุนต่อช่องให้อยู่ในรูปของกราฟสำหรับการค้นหาเส้นทาง</li>
+<li>เพื่อคำนวณเส้นทางด้วย BFS และ A* แล้วเปรียบเทียบจำนวนก้าว ต้นทุนรวม และจำนวนโหนดที่ขยาย</li>
+<li>เพื่อตรวจสอบความถูกต้องของผลการค้นหาด้วยการคำนวณมือ ทั้งต้นทุนของเส้นทาง และลำดับการขยายโหนดของ A* จากค่า f = g + h</li>
+<li>เพื่อสั่งหุ่นยนต์จริงเดินตามเส้นทางของแต่ละอัลกอริทึม และบันทึกจำนวนก้าวที่วางแผน จำนวนก้าวจริง เวลา
+การชนสิ่งกีดขวาง และการถึงเป้าหมาย</li>
+<li>เพื่อประเมินความสม่ำเสมอของการเคลื่อนที่จากการรันซ้ำอัลกอริทึมละ 3 รอบ</li></ol>
+<h2 id="h03"><span class="mark">@@h03@@</span>1.3 ขอบเขตของการทดลอง</h2>
+<p>รายงานฉบับนี้นำเสนอผลการรันบนหุ่นยนต์จริง (โหมด REAL ROBOT) จำนวน 6 รอบ แบ่งเป็น BFS 3 รอบ
+(BFS_1 ถึง BFS_3) และ A* 3 รอบ (A_star_1 ถึง A_star_3) บันทึกระหว่างเวลา 10:26 ถึง 10:36 น. ของวันที่ 14 กันยายน 2569
+ข้อมูลทุกรอบถูกบันทึกเป็นไฟล์ Jupyter notebook ในโฟลเดอร์ <code>analyze/runs/</code> ด้วยปุ่ม SAVE RESULT ของโปรแกรม</p>
+<p>ตำแหน่งของหุ่นยนต์ในรายงานมาจาก odometry ของล้อร่วมกับมุม yaw จาก IMU ของหุ่นยนต์เอง
+ไม่ได้วัดด้วยระบบอ้างอิงภายนอก เช่น กล้องเหนือสนามหรือตลับเมตร ค่าความคลาดเคลื่อนเชิงตำแหน่งทั้งหมดในรายงานจึงเป็น
+ค่าที่หุ่นยนต์ประมาณได้เอง ไม่ใช่ความคลาดเคลื่อนเทียบกับพื้นสนามจริง</p>
+<h1 id="h04"><span class="mark">@@h04@@</span>2. อุปกรณ์และผังสนามทดลอง (Equipment and Field Layout)</h1>
+<h2 id="h05"><span class="mark">@@h05@@</span>2.1 อุปกรณ์ที่ใช้</h2>
+<p class="cap">ตารางที่ 1&nbsp; รายการอุปกรณ์และซอฟต์แวร์ที่ใช้ในการทดลอง</p><table><colgroup><col style="width:34%"><col style="width:66%"></colgroup><tr><th>รายการ</th><th>รายละเอียดและหน้าที่</th></tr><tr><td class="">DJI RoboMaster EP</td><td class="">หุ่นยนต์ฐานล้อ mecanum ถอดชุด gripper ออกและติดตั้ง gimbal แทน ใช้เป็นตัวกระทำในสนามจริง</td></tr><tr><td class="">เซนเซอร์ ToF บน gimbal</td><td class="">วัดระยะด้านหน้า ตั้ง gimbal เป็นโหมด chassis-lead และ recenter ก่อนเริ่ม เพื่อให้ ToF หันตามตัวรถ</td></tr><tr><td class="">คอมพิวเตอร์โน้ตบุ๊ก</td><td class="">Python 3.8 เชื่อมต่อ Wi-Fi ของหุ่นยนต์ (โหมด AP) ใช้รันอัลกอริทึม ควบคุม และบันทึกข้อมูล</td></tr><tr><td class="">ซอฟต์แวร์</td><td class="">RoboMaster Python SDK, pygame 2.6.1 (หน้าจอควบคุม), numpy และ matplotlib (บันทึกและพล็อตผล)</td></tr><tr><td class="">เทปกระดาษและตลับเมตร</td><td class="">ตีเส้นตารางกริด 4×4 ช่องละ 0.60 เมตร</td></tr><tr><td class="">ป้ายสัญลักษณ์และกล่องสิ่งกีดขวาง</td><td class="">ระบุจุดเริ่มต้น S เป้าหมาย G และช่องสิ่งกีดขวางบนสนาม</td></tr><tr><td class="">พื้นที่ราบโล่ง</td><td class="">ขนาดอย่างน้อย 2.4×2.4 เมตร ปราศจากคนในสนามระหว่างการรัน</td></tr></table>
+<h2 id="h06"><span class="mark">@@h06@@</span>2.2 ผังสนามกริด 4×4</h2>
+<p>สนามทดลองเป็นตารางกริด 4×4 อ้างอิงพิกัดในรูป (x, y) ตามใบงาน โดย x เพิ่มไปทางขวาและ y เพิ่มขึ้นด้านบน
+หุ่นยนต์เริ่มที่ S = (1, 4) เป้าหมายคือ G = (4, 1) และมีสิ่งกีดขวางที่ (4, 4), (2, 3) และ (3, 2)
+ตัวเลขในแต่ละช่องคือต้นทุนของการเข้าสู่ช่องนั้น หุ่นยนต์เคลื่อนที่ได้ 4 ทิศ คือ E, S, W และ N ครั้งละหนึ่งช่อง
+และหมุนตัวให้หันไปทางทิศที่จะเคลื่อนที่ก่อนเดินหน้าทุกครั้ง</p>
+<table class="grid"><tr><th class="g-ax">4</th><td class="g-sg"><b>S<br></b>2</td><td class=""><b></b>3</td><td class=""><b></b>1</td><td class="g-x">X</td></tr><tr><th class="g-ax">3</th><td class=""><b></b>2</td><td class="g-x">X</td><td class=""><b></b>4</td><td class=""><b></b>2</td></tr><tr><th class="g-ax">2</th><td class=""><b></b>3</td><td class=""><b></b>1</td><td class="g-x">X</td><td class=""><b></b>4</td></tr><tr><th class="g-ax">1</th><td class=""><b></b>2</td><td class=""><b></b>3</td><td class=""><b></b>2</td><td class="g-sg"><b>G<br></b>1</td></tr><tr><th></th><th class="g-ax">1</th><th class="g-ax">2</th><th class="g-ax">3</th><th class="g-ax">4</th></tr></table>
+<p class="figcap">รูปที่ 1&nbsp; ผังสนามกริด 4×4 พร้อมต้นทุนต่อช่อง จุดเริ่มต้น S = (1, 4) เป้าหมาย G = (4, 1)<br>
+และสิ่งกีดขวาง X ที่ (4, 4), (2, 3) และ (3, 2)</p>
+<h2 id="h07"><span class="mark">@@h07@@</span>2.3 การกำหนดต้นทุน (Cost Design)</h2>
+<p class="cap">ตารางที่ 2&nbsp; โครงสร้างต้นทุนและเหตุผลเชิงออกแบบ</p><table><colgroup><col style="width:32%"><col style="width:12%"><col style="width:56%"></colgroup><tr><th>เหตุการณ์</th><th>ต้นทุน</th><th>เหตุผลเชิงออกแบบ</th></tr><tr><td class="">เข้าสู่ช่องว่างทั่วไป</td><td class="num">1 – 4</td><td class="">จ่ายต้นทุนตามตัวเลขที่กำกับไว้ในช่องปลายทาง</td></tr><tr><td class="">อยู่ที่จุดเริ่มต้น S</td><td class="num">ไม่นับ</td><td class="">ช่อง S กำกับค่า 2 แต่หุ่นยนต์อยู่ในช่องนี้ตั้งแต่ต้น จึงไม่มีการเข้าสู่ช่อง</td></tr><tr><td class="">เข้าสู่เป้าหมาย G</td><td class="num">1</td><td class="">จ่ายต้นทุนของช่อง G และจบการค้นหาทันที</td></tr><tr><td class="">เข้าสู่ช่องสิ่งกีดขวางหรือออกนอกสนาม</td><td class="num">—</td><td class="">ไม่มีเส้นเชื่อมในกราฟ อัลกอริทึมจึงเลือกไม่ได้</td></tr></table>
+<p>ต้นทุนของเส้นทางคือผลรวมของต้นทุนช่องที่เข้าไปหลังออกจาก S ระยะ Manhattan จาก S ไป G เท่ากับ 6 ก้าว
+และสิ่งกีดขวางไม่ได้บังคับให้อ้อม เส้นทางที่ใช้จำนวนก้าวน้อยที่สุดจึงยาว 6 ก้าว
+ส่วนต้นทุนต่ำสุดที่เป็นไปได้คือ 12 ซึ่งได้จากเส้นทางที่ A* เลือก สิ่งกีดขวางที่ (2, 3) และ (3, 2)
+แบ่งสนามออกเป็นทางเลือกด้านบนขวาและด้านล่างซ้าย ซึ่งยาวเท่ากันแต่มีต้นทุนต่างกัน</p>
+<h1 id="h08"><span class="mark">@@h08@@</span>3. ทฤษฎีที่เกี่ยวข้อง (Theoretical Background)</h1>
+<h2 id="h09"><span class="mark">@@h09@@</span>3.1 นิยามปัญหาในรูปกราฟ</h2>
+<p class="cap">ตารางที่ 3&nbsp; องค์ประกอบของกราฟในการทดลองนี้</p><table><colgroup><col style="width:30%"><col style="width:70%"></colgroup><tr><th>องค์ประกอบ</th><th>นิยามในการทดลองนี้</th></tr><tr><td class="">โหนด (Node)</td><td class="">ช่องที่ไม่ใช่สิ่งกีดขวาง รวม 13 โหนด (16 ช่อง หักสิ่งกีดขวาง 3 ช่อง)</td></tr><tr><td class="">เส้นเชื่อม (Edge)</td><td class="">เชื่อมช่องที่ติดกันใน 4 ทิศ E, S, W, N โดยไม่มีการเดินแนวทแยง</td></tr><tr><td class="">น้ำหนักเส้นเชื่อม</td><td class="">w(u, v) = cost(v) คือต้นทุนของช่องปลายทาง กราฟจึงเป็นกราฟมีทิศทาง เพราะ w(u, v) ≠ w(v, u) ได้</td></tr><tr><td class="">จุดเริ่มต้นและเป้าหมาย</td><td class="">S = (1, 4) และ G = (4, 1)</td></tr></table>
+<h2 id="h10"><span class="mark">@@h10@@</span>3.2 การค้นหาแบบ Breadth-First Search</h2>
+<p>BFS ขยายโหนดทีละระดับความลึกด้วยคิวแบบเข้าก่อนออกก่อน (FIFO) โหนดที่อยู่ห่างจาก S หนึ่งก้าวจะถูกขยายทั้งหมด
+ก่อนโหนดที่ห่างสองก้าว เมื่อพบ G ครั้งแรกจึงรับประกันว่าเป็นเส้นทางที่มีจำนวนเส้นเชื่อมน้อยที่สุด
+แต่ BFS ไม่ใช้น้ำหนักเส้นเชื่อมเลย เมื่อมีหลายเส้นทางที่ยาวเท่ากัน เส้นทางที่ได้จึงขึ้นกับลำดับการเพิ่มเพื่อนบ้านเข้าคิว
+ซึ่งโปรแกรมกำหนดเป็นลำดับคงที่ E, S, W, N</p>
+<h2 id="h11"><span class="mark">@@h11@@</span>3.3 การค้นหาแบบ A*</h2>
+<p>A* เลือกขยายโหนดที่มีค่าประเมิน f(n) ต่ำที่สุดจาก priority queue โดย</p>
+<pre class="eq">f(n) = g(n) + h(n)
+h(n) = ( |x − x<sub>G</sub>| + |y − y<sub>G</sub>| ) × c<sub>min</sub>,   c<sub>min</sub> = min cost = 1</pre>
+<p>g(n) คือต้นทุนจริงสะสมจาก S ถึง n และ h(n) คือค่าประมาณต้นทุนที่เหลือถึง G ทุกก้าวมีต้นทุนอย่างน้อย c<sub>min</sub>
+และต้องใช้อย่างน้อยเท่ากับระยะ Manhattan จึงไม่มีทางไปถึง G ด้วยต้นทุนต่ำกว่า h(n) heuristic นี้จึงไม่ประเมินเกินจริง (admissible)
+และสอดคล้อง (consistent) เพราะหนึ่งก้าวลดค่า h ได้ไม่เกิน c<sub>min</sub> ขณะที่จ่ายต้นทุนอย่างน้อย c<sub>min</sub>
+ผลคือเมื่อ G ถูกดึงออกจากคิวครั้งแรก เส้นทางนั้นมีต้นทุนต่ำสุดแน่นอน
+ในกรณีที่ค่า f เท่ากัน โปรแกรมเลือกโหนดที่มีค่า g ต่ำกว่าก่อน</p>
+<h2 id="h12"><span class="mark">@@h12@@</span>3.4 ความแตกต่างระหว่าง BFS กับ A*</h2>
+<p>BFS เหมาะสมที่สุดเฉพาะเมื่อทุกเส้นเชื่อมมีน้ำหนักเท่ากัน ส่วน A* ใช้ทั้งต้นทุนจริง g และค่าประมาณ h
+ถ้ากำหนด h(n) = 0 A* จะกลายเป็น Dijkstra ซึ่งยังให้ต้นทุนต่ำสุดแต่ขยายโหนดมากกว่า
+ค่า h ที่ดีช่วยให้ A* ข้ามโหนดที่มี f สูงกว่าต้นทุนของคำตอบได้ บนสนามนี้ทั้งสองอัลกอริทึมให้เส้นทาง 6 ก้าวเท่ากัน
+แต่ต้นทุนต่างกัน จึงเป็นกรณีที่แยกความหมายของ “สั้นที่สุด” สองแบบออกจากกันได้ชัดเจน</p>
+<h2 id="h13"><span class="mark">@@h13@@</span>3.5 ความหมายของค่าพารามิเตอร์ต่อผลลัพธ์</h2>
+<p class="cap">ตารางที่ 4&nbsp; ผลของพารามิเตอร์แต่ละตัวต่อพฤติกรรมของระบบ</p><table><colgroup><col style="width:24%"><col style="width:20%"><col style="width:56%"></colgroup><tr><th>พารามิเตอร์</th><th>ค่าที่ใช้</th><th>ผลต่อผลลัพธ์</th></tr><tr><td class="">c<sub>min</sub> ใน h(n)</td><td class="num">1</td><td class="">ค่าที่มากกว่าต้นทุนต่ำสุดจริงทำให้ h ประเมินเกินจริง A* อาจไม่ได้ต้นทุนต่ำสุด</td></tr><tr><td class="">ลำดับเพื่อนบ้าน</td><td class="num">E, S, W, N</td><td class="">กำหนดว่า BFS จะเลือกเส้นทางใดเมื่อมีหลายเส้นทางยาวเท่ากัน</td></tr><tr><td class="">cell_m</td><td class="num">0.60 ม.</td><td class="">ระยะจริงของหนึ่งช่อง ใช้แปลงตำแหน่ง odometry เป็นพิกัดช่อง</td></tr><tr><td class="">max_speed</td><td class="num">0.35 ม./วินาที</td><td class="">ความเร็วเดินหน้าสูงสุด กำหนดเวลาที่ใช้ต่อหนึ่งช่อง</td></tr><tr><td class="">turn_speed</td><td class="num">90 °/วินาที</td><td class="">ความเร็วเชิงมุมสูงสุดขณะหมุนตัว</td></tr><tr><td class="">TURN_TOL / POS_TOL</td><td class="num">2° / 1 ซม.</td><td class="">เกณฑ์ว่าการหมุนหรือการเดินหนึ่งช่องเสร็จแล้ว ค่าเล็กแม่นกว่าแต่ใช้เวลานานกว่า</td></tr><tr><td class="">HIT_TOF_MM</td><td class="num">100 มม.</td><td class="">ระยะ ToF ที่ต่ำกว่านี้ถือว่าชนสิ่งกีดขวาง</td></tr></table>
+<h1 id="h14"><span class="mark">@@h14@@</span>4. การออกแบบโปรแกรม (Program Design)</h1>
+<h2 id="h15"><span class="mark">@@h15@@</span>4.1 โครงสร้างของโปรแกรม</h2>
+<p>ส่วนค้นหาเส้นทาง ส่วนควบคุมหุ่นยนต์ และหน้าจอ pygame อยู่ในไฟล์ <code>src/cost_map_panel.py</code> ส่วนบันทึกผลเป็น notebook อยู่ในไฟล์ <code>src/run_notebook.py</code> องค์ประกอบหลักแบ่งได้ดังตารางที่ 5</p>
+<p class="cap">ตารางที่ 5&nbsp; องค์ประกอบหลักของโปรแกรมและหน้าที่</p><table><colgroup><col style="width:30%"><col style="width:70%"></colgroup><tr><th>องค์ประกอบ</th><th>หน้าที่</th></tr><tr><td class=""><code>bfs</code> / <code>astar</code></td><td class="">ค้นหาเส้นทางบนแผนที่ คืนค่าเส้นทางและลำดับโหนดที่ขยาย</td></tr><tr><td class=""><code>path_cost</code></td><td class="">รวมต้นทุนของช่องที่เข้าไปหลังออกจาก S</td></tr><tr><td class=""><code>SimRobot</code></td><td class="">หุ่นยนต์จำลองเชิงจลนศาสตร์ ใช้ตรวจสอบโปรแกรมก่อนสั่งหุ่นยนต์จริง</td></tr><tr><td class=""><code>RealRobot</code></td><td class="">เชื่อมกับ SDK จริง อ่านตำแหน่ง มุม yaw มุม gimbal และ ToF แล้วสั่ง chassis.drive_speed</td></tr><tr><td class=""><code>PathRunner</code></td><td class="">เดินตามเส้นทางทีละช่องแบบ closed-loop หมุนตัวเข้าทิศก่อนแล้วจึงเดินหน้า</td></tr><tr><td class=""><code>App</code></td><td class="">หน้าจอ pygame แสดงแผนที่ เส้นทาง ตำแหน่งสด แท็บ CALIBRATE และปุ่ม SAVE RESULT</td></tr><tr><td class=""><code>build_run</code></td><td class="">รวมข้อมูลรอบ คำนวณ planned steps, actual steps, time, hit obstacle และ reach goal</td></tr><tr><td class=""><code>run_notebook.save</code></td><td class="">บันทึกรอบเป็น notebook ตั้งชื่ออัตโนมัติ BFS_n หรือ A_star_n</td></tr></table>
+<h2 id="h16"><span class="mark">@@h16@@</span>4.2 การแยกชั้นควบคุมหุ่นยนต์ออกจากอัลกอริทึม</h2>
+<p>ตัวควบคุมทั้งสองชนิดมีเมท็อดเหมือนกัน คือ pose, drive, stop และ set_zero ทำให้ PathRunner
+ทำงานได้โดยไม่ต้องทราบว่ากำลังสั่งหุ่นยนต์จริงหรือตัวจำลอง การเดินแต่ละช่องแบ่งเป็นสองขั้น
+ขั้นแรกหมุนตัวจนทิศผิดพลาดน้อยกว่า 2 องศา ขั้นที่สองเดินหน้าด้วยตัวควบคุมแบบสัดส่วนจากระยะที่เหลือ
+พร้อมแก้ระยะด้านข้างและทิศทางไปพร้อมกัน จนระยะที่เหลือน้อยกว่า 1 เซนติเมตร
+คำสั่งความเร็วทุกครั้งกำหนด timeout 0.5 วินาที หากลูปควบคุมหยุดทำงาน หุ่นยนต์จะหยุดเอง</p>
+<pre class="code">along   = (dx·cos h + dy·sin h) · cell_m        # ระยะที่เหลือตามทิศเดิน
+lateral = (dx·sin h − dy·cos h) · cell_m        # ระยะเบี่ยงด้านข้าง
+robot.drive(clamp(1.5·along, 0.05, max_speed),
+            clamp(1.5·lateral, −0.1, 0.1),
+            clamp(2.0·wrap(h − heading), −30, 30))
+# RealRobot: chassis.drive_speed(x, y·y_sign, z·z_sign, timeout=0.5)</pre>
+<p class="cap">ตัวอย่างที่ 1&nbsp; การคำนวณคำสั่งความเร็วขณะเดินหนึ่งช่องใน PathRunner._forward</p>
+<h2 id="h17"><span class="mark">@@h17@@</span>4.3 พารามิเตอร์ที่ตั้งค่าได้</h2>
+<p>ค่าทั้งหมดปรับได้จากแท็บ CALIBRATE ของหน้าจอ และบันทึกลงไฟล์ <code>calibration_output/motion_calibration.json</code> ค่าที่ใช้ในทั้ง 6 รอบถูกบันทึกไว้ในไฟล์ผลลัพธ์ของแต่ละรอบ</p>
+<p class="cap">ตารางที่ 6&nbsp; พารามิเตอร์ของโปรแกรมและค่าที่ใช้ในการทดลองนี้</p><table><colgroup><col style="width:26%"><col style="width:22%"><col style="width:52%"></colgroup><tr><th>ตัวเลือก</th><th>ค่าที่ใช้</th><th>ความหมาย</th></tr><tr><td class="">cell_m</td><td class="num">0.60</td><td class="">ความกว้างของช่องกริดเป็นเมตร</td></tr><tr><td class="">start_heading</td><td class="num">BFS: E / A*: S</td><td class="">ทิศที่หุ่นยนต์หันที่จุด S ตั้งให้ตรงกับทิศของก้าวแรกในแต่ละเส้นทาง</td></tr><tr><td class="">forward_scale</td><td class="num">1.000</td><td class="">อัตราส่วนระยะ odometry ต่อระยะจริง</td></tr><tr><td class="">max_speed</td><td class="num">0.35</td><td class="">ความเร็วเดินหน้าสูงสุด (ม./วินาที)</td></tr><tr><td class="">turn_speed</td><td class="num">90</td><td class="">ความเร็วหมุนสูงสุด (°/วินาที)</td></tr><tr><td class="">z_sign</td><td class="num">-1</td><td class="">เครื่องหมายของคำสั่งหมุน ปรับจากการทดสอบ TEST LEFT 90 บนหุ่นยนต์จริง</td></tr><tr><td class="">yaw_sign / y_sign</td><td class="num">+1 / +1</td><td class="">เครื่องหมายของมุม yaw และแกน y</td></tr><tr><td class="">tof_offset_mm</td><td class="num">0</td><td class="">ระยะเลนส์ ToF ห่างจากจุดศูนย์กลางตัวรถ</td></tr></table>
+<h2 id="h18"><span class="mark">@@h18@@</span>4.4 ข้อมูลที่บันทึกในแต่ละรอบ</h2>
+<p>ระหว่างการเดิน โปรแกรมบันทึกตำแหน่งทุก 0.1 วินาที (เฉลี่ยจริง 0.110 วินาทีต่อแถว) หนึ่งรอบมีประมาณ
+187 แถว เมื่อจบรอบ โปรแกรมคำนวณตัวชี้วัดตามนิยามในตารางที่ 7 แล้วบันทึกทั้งหมดลงใน notebook</p>
+<pre class="code">samples: t, x, y, yaw, mx, my, heading, tof
+result : planned_steps, actual_steps, time_s, hit_obstacle, reach_goal,
+         path_cost, final_cell, goal_error_m, travelled_m</pre>
+<p class="cap">ตัวอย่างที่ 2&nbsp; คอลัมน์ข้อมูลรายแถวและตัวชี้วัดสรุปที่บันทึกในแต่ละรอบ</p>
+<p class="cap">ตารางที่ 7&nbsp; นิยามของตัวชี้วัดที่บันทึก</p><table><colgroup><col style="width:22%"><col style="width:78%"></colgroup><tr><th>ตัวชี้วัด</th><th>นิยาม</th></tr><tr><td class="">planned steps</td><td class="">จำนวนก้าวของเส้นทางที่อัลกอริทึมวางแผน</td></tr><tr><td class="">actual steps</td><td class="">จำนวนครั้งที่หุ่นยนต์เข้าสู่ช่องใหม่ นับเมื่อจุดศูนย์กลางอยู่ห่างกึ่งกลางช่องไม่เกิน 0.35 ช่อง (21 ซม.) ทั้งสองแกน</td></tr><tr><td class="">time (s)</td><td class="">เวลาจากการกด RUN จนจบการเดิน</td></tr><tr><td class="">hit obstacle</td><td class="">YES เมื่อจุดศูนย์กลางเข้าช่องสิ่งกีดขวางหรือออกนอกสนาม หรือ ToF อ่านได้ต่ำกว่า 100 มม.</td></tr><tr><td class="">reach goal</td><td class="">YES เมื่อ PathRunner จบด้วยสถานะ Done และช่องสุดท้ายที่เข้าคือ G</td></tr><tr><td class="">goal_error_m</td><td class="">ระยะจากตำแหน่งสุดท้ายถึงกึ่งกลางช่อง G ตาม odometry</td></tr></table>
+<h1 id="h19"><span class="mark">@@h19@@</span>5. วิธีดำเนินการทดลอง (Experimental Procedure)</h1>
+<h2 id="h20"><span class="mark">@@h20@@</span>5.1 ขั้นตอนการทดลอง</h2>
+<ol>
+<li>ตีเส้นตารางกริด 4×4 ช่องละ 0.60 เมตร วางป้าย S และ G และวางสิ่งกีดขวางตามรูปที่ 1</li>
+<li>ทดสอบโปรแกรมในโหมด SIMULATION ว่า BFS และ A* ให้เส้นทางตามที่คำนวณ และหุ่นยนต์จำลองเดินถึงเป้าหมาย</li>
+<li>เปิดโปรแกรมในโหมดหุ่นยนต์จริง กด CONNECT REAL แล้วตรวจทิศการหมุนด้วยปุ่ม TEST LEFT 90
+และปรับ Z SIGN จนหุ่นยนต์หมุนซ้ายจริง จากนั้นกด SAVE CALIBRATION</li>
+<li>วางหุ่นยนต์ที่กึ่งกลางช่อง S ให้หันไปทางทิศของก้าวแรก (BFS หันทิศ E และ A* หันทิศ S)
+ตั้งค่า start heading ให้ตรงกัน แล้วกด SET START POSE</li>
+<li>เลือก FOLLOW เป็นอัลกอริทึมที่ต้องการ กด RUN และยืนยันในหน้าต่าง CONFIRM</li>
+<li>เมื่อหุ่นยนต์หยุด กด SAVE RESULT เพื่อบันทึกรอบเป็น notebook</li>
+<li>นำหุ่นยนต์กลับจุด S กด SET START POSE แล้วทำซ้ำจนครบอัลกอริทึมละ 3 รอบ</li></ol>
+<h2 id="h21"><span class="mark">@@h21@@</span>5.2 คำสั่งที่ใช้และไฟล์ผลลัพธ์</h2>
+<pre class="code">python main.py costmap --mode real
+python analyze/make_report.py</pre>
+<p class="cap">ตัวอย่างที่ 3&nbsp; คำสั่งเปิดหน้าจอควบคุมหุ่นยนต์จริง และคำสั่งสร้างรายงานฉบับนี้</p>
+<p class="cap">ตารางที่ 8&nbsp; รอบการทดลองที่นำมาวิเคราะห์</p><table><colgroup><col style="width:18%"><col style="width:16%"><col style="width:14%"><col style="width:30%"><col style="width:22%"></colgroup><tr><th>รอบ</th><th>อัลกอริทึม</th><th>โหมด</th><th>เวลาบันทึก</th><th>จำนวนแถวข้อมูล</th></tr><tr><td class="">BFS_1</td><td class="">BFS</td><td class="">REAL</td><td class="">2026-09-14 10:26:03</td><td class="num">188</td></tr><tr><td class="">BFS_2</td><td class="">BFS</td><td class="">REAL</td><td class="">2026-09-14 10:27:52</td><td class="num">185</td></tr><tr><td class="">BFS_3</td><td class="">BFS</td><td class="">REAL</td><td class="">2026-09-14 10:28:35</td><td class="num">187</td></tr><tr><td class="">A_star_1</td><td class="">A*</td><td class="">REAL</td><td class="">2026-09-14 10:35:18</td><td class="num">189</td></tr><tr><td class="">A_star_2</td><td class="">A*</td><td class="">REAL</td><td class="">2026-09-14 10:35:58</td><td class="num">188</td></tr><tr><td class="">A_star_3</td><td class="">A*</td><td class="">REAL</td><td class="">2026-09-14 10:36:52</td><td class="num">187</td></tr></table>
+<h2 id="h22"><span class="mark">@@h22@@</span>5.3 มาตรการความปลอดภัย</h2>
+<ul>
+<li>กำหนดผู้ดูแลความปลอดภัยหนึ่งคน ประจำอยู่ใกล้สวิตช์ปิดของหุ่นยนต์ตลอดการรัน</li>
+<li>ห้ามมีผู้ใดยืนอยู่ในสนามขณะโปรแกรมทำงาน</li>
+<li>การรันบนหุ่นยนต์จริงต้องกดยืนยันในหน้าต่าง CONFIRM ทุกครั้ง และกด Space หรือ F1 เพื่อหยุดได้ตลอดเวลา</li>
+<li>คำสั่ง drive_speed ทุกครั้งกำหนด timeout 0.5 วินาที และโปรแกรมสั่งหยุดล้อเมื่อปิดหน้าต่าง</li>
+<li>หากหุ่นยนต์หมุนผิดทิศจนมุมผิดพลาดเพิ่มขึ้นเกิน 30 องศา โปรแกรมยกเลิกการเดินและแจ้งให้ปรับ Z SIGN หรือ YAW SIGN</li>
+<li>เปิดโปรแกรมจาก terminal ของผู้ทดลองเอง เพื่อไม่ให้โปรเซสถูกปิดจากเครื่องมืออื่นขณะหุ่นยนต์กำลังเคลื่อนที่</li></ul>
+<div class="pb"></div>
+<h1 id="h23"><span class="mark">@@h23@@</span>6. ผลการทดลอง (Results)</h1>
+<h2 id="h24"><span class="mark">@@h24@@</span>6.1 ผลสรุปรายรอบ</h2>
+<p class="cap">ตารางที่ 9&nbsp; ผลการรันบนหุ่นยนต์จริงทั้ง 6 รอบ</p><table><colgroup><col style="width:14%"><col style="width:12%"><col style="width:13%"><col style="width:13%"><col style="width:10%"><col style="width:12%"><col style="width:13%"><col style="width:13%"></colgroup><tr><th>รอบ</th><th>อัลกอริทึม</th><th>planned steps</th><th>actual steps</th><th>ต้นทุน</th><th>time (s)</th><th>hit obstacle</th><th>reach goal</th></tr><tr><td class="">BFS_1</td><td class="">BFS</td><td class="num">6</td><td class="num">6</td><td class="num">15</td><td class="num">20.52</td><td class="">NO</td><td class="">YES</td></tr><tr><td class="">BFS_2</td><td class="">BFS</td><td class="num">6</td><td class="num">6</td><td class="num">15</td><td class="num">20.36</td><td class="">NO</td><td class="">YES</td></tr><tr><td class="">BFS_3</td><td class="">BFS</td><td class="num">6</td><td class="num">6</td><td class="num">15</td><td class="num">20.34</td><td class="">NO</td><td class="">YES</td></tr><tr><td class="">A_star_1</td><td class="">A*</td><td class="num">6</td><td class="num">6</td><td class="num">12</td><td class="num">20.66</td><td class="">NO</td><td class="">YES</td></tr><tr><td class="">A_star_2</td><td class="">A*</td><td class="num">6</td><td class="num">6</td><td class="num">12</td><td class="num">20.56</td><td class="">NO</td><td class="">YES</td></tr><tr><td class="">A_star_3</td><td class="">A*</td><td class="num">6</td><td class="num">6</td><td class="num">12</td><td class="num">20.52</td><td class="">NO</td><td class="">YES</td></tr></table>
+<p>หุ่นยนต์เดินถึงเป้าหมายครบทุกรอบใน 6 รอบ และไม่มีรอบใดตรวจพบการชนสิ่งกีดขวาง จำนวนก้าวจริงเท่ากับจำนวนก้าวที่วางแผนไว้ 6 ก้าวในทุกรอบ
+เวลาที่ใช้ของทุกรอบอยู่ในช่วง 20.34 ถึง 20.66 วินาที</p>
+<h2 id="h25"><span class="mark">@@h25@@</span>6.2 เปรียบเทียบ BFS กับ A*</h2>
+<p class="cap">ตารางที่ 10&nbsp; เปรียบเทียบตัวชี้วัดของสองอัลกอริทึม (ค่าเฉลี่ย ± ส่วนเบี่ยงเบนมาตรฐาน จาก 3 รอบ)</p><table><colgroup><col style="width:30%"><col style="width:19%"><col style="width:19%"><col style="width:32%"></colgroup><tr><th>ตัวชี้วัด</th><th>BFS</th><th>A*</th><th>ความหมาย</th></tr><tr><td class="">จำนวนก้าวที่วางแผน</td><td class="num">6</td><td class="num">6</td><td class="">เท่ากัน</td></tr><tr><td class="">ต้นทุนรวมของเส้นทาง</td><td class="num">15</td><td class="num">12</td><td class="">A* ต่ำกว่า 3 (20%)</td></tr><tr><td class="">จำนวนโหนดที่ขยาย</td><td class="num">13</td><td class="num">12</td><td class="">จากโหนดทั้งหมด 13 โหนด</td></tr><tr><td class="">จำนวนครั้งที่หมุนตัว</td><td class="num">3</td><td class="num">3</td><td class="">นับจากทิศเริ่มต้นที่ S</td></tr><tr><td class="">อัตราการถึงเป้าหมาย</td><td class="num">3/3</td><td class="num">3/3</td><td class=""></td></tr><tr><td class="">เวลา (วินาที)</td><td class="num">20.41 ± 0.10</td><td class="num">20.58 ± 0.07</td><td class="">ต่างกัน 0.17 วินาที</td></tr><tr><td class="">ระยะทางที่เคลื่อนที่ (ม.)</td><td class="num">3.678 ± 0.009</td><td class="num">3.672 ± 0.002</td><td class="">เส้นทางอุดมคติ 3.60 ม.</td></tr><tr><td class="">ความคลาดเคลื่อนที่เป้าหมาย (ซม.)</td><td class="num">0.83 ± 0.15</td><td class="num">0.93 ± 0.06</td><td class="">ตาม odometry</td></tr><tr><td class="">ระยะห่างจากเส้นทางสูงสุด (ซม.)</td><td class="num">0.99 ± 0.14</td><td class="num">0.99 ± 0.10</td><td class="">ตาม odometry</td></tr><tr><td class="">ระยะห่างจากเส้นทาง RMS (ซม.)</td><td class="num">0.34 ± 0.03</td><td class="num">0.31 ± 0.04</td><td class="">ตาม odometry</td></tr><tr><td class="">ทิศผิดพลาดที่เป้าหมาย (องศา)</td><td class="num">0.21 ± 0.07</td><td class="num">0.09 ± 0.06</td><td class="">เทียบทิศหลักที่ใกล้ที่สุด</td></tr></table>
+<p>ความแตกต่างเชิงแผนระหว่างสองอัลกอริทึมมีเพียงต้นทุนรวมและจำนวนโหนดที่ขยาย
+ส่วนตัวชี้วัดของการเคลื่อนที่จริงทุกตัวใกล้เคียงกันมาก เวลาเฉลี่ยของ A* (20.58 วินาที) ต่างจาก BFS (20.41 วินาที)
+เพียง 0.17 วินาที ซึ่งอยู่ในระดับเดียวกับความแปรปรวนระหว่างรอบของอัลกอริทึมเดียวกัน</p>
+<div class="fig"><img src="figures/fig6_time.png" style="width:92%"><p class="figcap">รูปที่ 2&nbsp; เวลาที่ใช้ของแต่ละรอบ (สีเทา BFS สีเข้ม A*)</p></div>
+<h2 id="h26"><span class="mark">@@h26@@</span>6.3 เส้นทางที่วางแผนและลำดับการขยายโหนด</h2>
+<div class="fig"><img src="figures/fig2_plans.png" style="width:58%"><p class="figcap">รูปที่ 3&nbsp; เส้นทางที่วางแผนโดย BFS (เส้นประ) และ A* (เส้นทึบ) ตัวเลขมุมช่องคือต้นทุน</p></div>
+<p class="cap">ตารางที่ 11&nbsp; ลำดับการขยายโหนดของ BFS และ A*</p><table><colgroup><col style="width:20%"><col style="width:40%"><col style="width:40%"></colgroup><tr><th>ลำดับ</th><th>BFS</th><th>A*</th></tr><tr><td class="num">1</td><td class="">(1, 4)</td><td class="">(1, 4)</td></tr><tr><td class="num">2</td><td class="">(2, 4)</td><td class="">(1, 3)</td></tr><tr><td class="num">3</td><td class="">(1, 3)</td><td class="">(2, 4)</td></tr><tr><td class="num">4</td><td class="">(3, 4)</td><td class="">(3, 4)</td></tr><tr><td class="num">5</td><td class="">(1, 2)</td><td class="">(1, 2)</td></tr><tr><td class="num">6</td><td class="">(3, 3)</td><td class="">(2, 2)</td></tr><tr><td class="num">7</td><td class="">(2, 2)</td><td class="">(1, 1)</td></tr><tr><td class="num">8</td><td class="">(1, 1)</td><td class="">(3, 3)</td></tr><tr><td class="num">9</td><td class="">(4, 3)</td><td class="">(2, 1)</td></tr><tr><td class="num">10</td><td class="">(2, 1)</td><td class="">(4, 3)</td></tr><tr><td class="num">11</td><td class="">(4, 2)</td><td class="">(3, 1)</td></tr><tr><td class="num">12</td><td class="">(3, 1)</td><td class="">(4, 1)</td></tr><tr><td class="num">13</td><td class="">(4, 1)</td><td class=""></td></tr></table>
+<p>BFS ใช้เส้นทางด้านบนขวา (1, 4) → (2, 4) → (3, 4) → (3, 3) → (4, 3) → (4, 2) → (4, 1) เพราะลำดับเพื่อนบ้านเริ่มจากทิศ E ทำให้ช่อง (2, 4) เข้าคิวก่อน (1, 3)
+และสายของ (2, 4) ไปถึง G ก่อนในระดับความลึกที่ 6 ส่วน A* ใช้เส้นทางด้านล่างซ้าย (1, 4) → (1, 3) → (1, 2) → (2, 2) → (2, 1) → (3, 1) → (4, 1)
+ซึ่งผ่านช่องต้นทุน 1 ที่ (2, 2) และหลีกเลี่ยงช่องต้นทุน 4 ที่ (3, 3) และ (4, 2) BFS ขยายโหนดครบทั้ง 13 โหนด
+ส่วน A* ขยาย 12 โหนด โดยไม่ขยาย (4, 2) เพราะ f(4, 2) = 15 สูงกว่าต้นทุนของคำตอบ 12</p>
+<h2 id="h27"><span class="mark">@@h27@@</span>6.4 เส้นทางจริงของหุ่นยนต์</h2>
+<div class="fig"><img src="figures/fig3_trajectories.png" style="width:96%"><p class="figcap">รูปที่ 4&nbsp; ตำแหน่งจริงของหุ่นยนต์ตาม odometry ทั้ง 6 รอบ ซ้อนทับเส้นทางที่วางแผน</p></div>
+<div class="fig"><img src="figures/fig4_xte.png" style="width:94%"><p class="figcap">รูปที่ 5&nbsp; ระยะห่างของจุดศูนย์กลางหุ่นยนต์จากเส้นทางที่วางแผนตลอดการเดิน</p></div>
+<p>จากรูปที่ 4 เส้นทางจริงทั้ง 6 รอบซ้อนทับเส้นทางที่วางแผนจนแยกไม่ออกที่มาตราส่วนของสนาม
+รูปที่ 5 แสดงว่าระยะห่างจากเส้นทางสูงสุดของทุกรอบไม่เกิน 1.14 เซนติเมตร (รอบ BFS_1)
+ค่าสูงสุดเกิดช่วงสั้น ๆ ขณะหุ่นยนต์หมุนตัวที่มุมเลี้ยว ซึ่งจุดศูนย์กลางของหุ่นยนต์ขยับเล็กน้อยระหว่างหมุน</p>
+<h2 id="h28"><span class="mark">@@h28@@</span>6.5 เวลาการเคลื่อนที่รายช่อง</h2>
+<p class="cap">ตารางที่ 12&nbsp; เวลาที่ใช้ต่อหนึ่งก้าว นับจากถึงกึ่งกลางช่องก่อนหน้าถึงกึ่งกลางช่องถัดไป (วินาที, 3 รอบ)</p><table><colgroup><col style="width:8%"><col style="width:30%"><col style="width:16%"><col style="width:30%"><col style="width:16%"></colgroup><tr><th>ก้าว</th><th>BFS: การเคลื่อนที่</th><th>BFS: เวลา</th><th>A*: การเคลื่อนที่</th><th>A*: เวลา</th></tr><tr><td class="num">1</td><td class="">(1, 4) → (2, 4) (E)</td><td class="num">2.04 ± 0.05</td><td class="">(1, 4) → (1, 3) (S)</td><td class="num">1.99 ± 0.01</td></tr><tr><td class="num">2</td><td class="">(2, 4) → (3, 4) (E)</td><td class="num">2.64 ± 0.02</td><td class="">(1, 3) → (1, 2) (S)</td><td class="num">2.85 ± 0.12</td></tr><tr><td class="num">3</td><td class="">(3, 4) → (3, 3) (S, หมุน)</td><td class="num">4.07 ± 0.10</td><td class="">(1, 2) → (2, 2) (E, หมุน)</td><td class="num">4.11 ± 0.08</td></tr><tr><td class="num">4</td><td class="">(3, 3) → (4, 3) (E, หมุน)</td><td class="num">4.09 ± 0.13</td><td class="">(2, 2) → (2, 1) (S, หมุน)</td><td class="num">4.01 ± 0.10</td></tr><tr><td class="num">5</td><td class="">(4, 3) → (4, 2) (S, หมุน)</td><td class="num">4.04 ± 0.06</td><td class="">(2, 1) → (3, 1) (E, หมุน)</td><td class="num">4.08 ± 0.12</td></tr><tr><td class="num">6</td><td class="">(4, 2) → (4, 1) (S)</td><td class="num">2.78 ± 0.07</td><td class="">(3, 1) → (4, 1) (E)</td><td class="num">2.71 ± 0.12</td></tr></table>
+<div class="fig"><img src="figures/fig5_heading.png" style="width:94%"><p class="figcap">รูปที่ 6&nbsp; ทิศของหุ่นยนต์บนแผนที่ตลอดการเดิน รอบ BFS_1 และ A_star_1</p></div>
+<p>ก้าวที่ต้องหมุนตัวก่อนเดินใช้เวลาเฉลี่ย 4.07 วินาที ส่วนก้าวที่เดินตรงโดยไม่หมุนใช้เวลาเฉลี่ย 2.75 วินาที
+การหมุนตัวหนึ่งครั้งจึงเพิ่มเวลาประมาณ 1.3 วินาที ทั้งสองเส้นทางมีการหมุนตัว 3 ครั้งเท่ากัน (รูปที่ 6)
+และมีจำนวนก้าวเท่ากัน เวลารวมจึงใกล้เคียงกัน ก้าวแรกใช้เวลาเฉลี่ยเพียง 2.02 วินาที เพราะเริ่มนับจากกึ่งกลางช่อง S
+ขณะที่ก้าวอื่นเริ่มนับตั้งแต่หุ่นยนต์เข้าใกล้กึ่งกลางช่องก่อนหน้าในระยะ 6 ซม. จึงรวมช่วงที่ตัวควบคุมลดความเร็วเข้ากึ่งกลางช่องไว้ด้วย</p>
+<h2 id="h29"><span class="mark">@@h29@@</span>6.6 ค่าที่อ่านได้จากเซนเซอร์ ToF</h2>
+<div class="fig"><img src="figures/fig7_tof.png" style="width:94%"><p class="figcap">รูปที่ 7&nbsp; ระยะที่อ่านได้จาก ToF บน gimbal ตลอดการเดิน เส้นประแนวนอนคือเกณฑ์การชน 100 มม.</p></div>
+<p class="cap">ตารางที่ 13&nbsp; ค่า ToF ที่จุดเริ่มต้น ค่าต่ำสุดระหว่างทาง และค่าที่เป้าหมาย (มม.)</p><table><colgroup><col style="width:18%"><col style="width:14%"><col style="width:36%"><col style="width:16%"><col style="width:16%"></colgroup><tr><th>รอบ</th><th>เริ่มต้น</th><th>ต่ำสุด</th><th>ที่เป้าหมาย</th><th>ต่ำกว่าเกณฑ์</th></tr><tr><td class="">BFS_1</td><td class="num">1281</td><td class="">175 (t = 13.9 s ที่ (4, 3))</td><td class="num">296</td><td class="">NO</td></tr><tr><td class="">BFS_2</td><td class="num">1470</td><td class="">156 (t = 20.4 s ที่ (4, 1))</td><td class="num">156</td><td class="">NO</td></tr><tr><td class="">BFS_3</td><td class="num">1515</td><td class="">156 (t = 20.3 s ที่ (4, 1))</td><td class="num">156</td><td class="">NO</td></tr><tr><td class="">A_star_1</td><td class="num">687</td><td class="">142 (t = 14.1 s ที่ (2, 1))</td><td class="num">328</td><td class="">NO</td></tr><tr><td class="">A_star_2</td><td class="num">711</td><td class="">258 (t = 14.0 s ที่ (2, 1))</td><td class="num">297</td><td class="">NO</td></tr><tr><td class="">A_star_3</td><td class="num">759</td><td class="">176 (t = 13.8 s ที่ (2, 1))</td><td class="num">310</td><td class="">NO</td></tr></table>
+<p>ค่า ToF ต่ำสุดของทุกรอบอยู่ระหว่าง 142 ถึง 258 มม. สูงกว่าเกณฑ์การชน 100 มม. ทุกรอบ
+ที่เป้าหมาย รอบ A* ทั้งสามรอบหันทิศ E และอ่านได้ 328, 297, 310 มม. ส่วนรอบ BFS หันทิศ S และอ่านได้ 296, 156, 156 มม.
+ค่าที่เป้าหมายของ BFS_2 และ BFS_3 ต่ำกว่า BFS_1 อย่างชัดเจน แสดงว่ามีวัตถุอยู่ด้านหน้าหุ่นยนต์ใกล้กว่าในรอบนั้น
+ข้อมูลที่บันทึกไม่ระบุว่าวัตถุนั้นคืออะไร</p>
+<h1 id="h30"><span class="mark">@@h30@@</span>7. การตรวจสอบความถูกต้อง (Verification)</h1>
+<p>เพื่อยืนยันว่าโปรแกรมคำนวณตามทฤษฎีในหัวข้อที่ 3 จริง จึงคำนวณต้นทุนเส้นทาง และลำดับการขยายโหนดของ A* ด้วยมือ แล้วเปรียบเทียบกับค่าที่โปรแกรมบันทึกไว้ในไฟล์ผลลัพธ์</p>
+<h2 id="h31"><span class="mark">@@h31@@</span>7.1 การคำนวณต้นทุนเส้นทางด้วยมือ</h2>
+<pre class="eq">BFS : cost(2,4) + cost(3,4) + cost(3,3) + cost(4,3) + cost(4,2) + cost(4,1)
+    = 3 + 1 + 4 + 2 + 4 + 1 = 15
+A*  : cost(1,3) + cost(1,2) + cost(2,2) + cost(2,1) + cost(3,1) + cost(4,1)
+    = 2 + 3 + 1 + 3 + 2 + 1 = 12</pre>
+<h2 id="h32"><span class="mark">@@h32@@</span>7.2 ลำดับการขยายโหนดของ A*</h2>
+<p>ค่า h ของแต่ละโหนดคือระยะ Manhattan ถึง (4, 1) คูณ 1 ค่า g คือผลรวมต้นทุนตามเส้นทางที่ดีที่สุดที่พบ ณ ขณะนั้น และโหนดถูกดึงออกจากคิวตามค่า f จากน้อยไปมาก หากค่า f เท่ากันจะเลือกค่า g ที่น้อยกว่าก่อน</p>
+<p class="cap">ตารางที่ 14&nbsp; ค่าที่คำนวณด้วยมือ เทียบกับลำดับการขยายที่โปรแกรมบันทึก</p><table><colgroup><col style="width:8%"><col style="width:13%"><col style="width:13%"><col style="width:18%"><col style="width:7%"><col style="width:7%"><col style="width:15%"><col style="width:12%"></colgroup><tr><th>ลำดับ</th><th>โหนด</th><th>มาจาก</th><th>g</th><th>h</th><th>f</th><th>โปรแกรม</th><th>ผล</th></tr><tr><td class="num">1</td><td class="">(1, 4)</td><td class="">—</td><td class="num">0</td><td class="num">6</td><td class="num">6</td><td class="">(1, 4)</td><td class="">ตรงกัน</td></tr><tr><td class="num">2</td><td class="">(1, 3)</td><td class="">(1, 4)</td><td class="num">0 + 2 = 2</td><td class="num">5</td><td class="num">7</td><td class="">(1, 3)</td><td class="">ตรงกัน</td></tr><tr><td class="num">3</td><td class="">(2, 4)</td><td class="">(1, 4)</td><td class="num">0 + 3 = 3</td><td class="num">5</td><td class="num">8</td><td class="">(2, 4)</td><td class="">ตรงกัน</td></tr><tr><td class="num">4</td><td class="">(3, 4)</td><td class="">(2, 4)</td><td class="num">3 + 1 = 4</td><td class="num">4</td><td class="num">8</td><td class="">(3, 4)</td><td class="">ตรงกัน</td></tr><tr><td class="num">5</td><td class="">(1, 2)</td><td class="">(1, 3)</td><td class="num">2 + 3 = 5</td><td class="num">4</td><td class="num">9</td><td class="">(1, 2)</td><td class="">ตรงกัน</td></tr><tr><td class="num">6</td><td class="">(2, 2)</td><td class="">(1, 2)</td><td class="num">5 + 1 = 6</td><td class="num">3</td><td class="num">9</td><td class="">(2, 2)</td><td class="">ตรงกัน</td></tr><tr><td class="num">7</td><td class="">(1, 1)</td><td class="">(1, 2)</td><td class="num">5 + 2 = 7</td><td class="num">3</td><td class="num">10</td><td class="">(1, 1)</td><td class="">ตรงกัน</td></tr><tr><td class="num">8</td><td class="">(3, 3)</td><td class="">(3, 4)</td><td class="num">4 + 4 = 8</td><td class="num">3</td><td class="num">11</td><td class="">(3, 3)</td><td class="">ตรงกัน</td></tr><tr><td class="num">9</td><td class="">(2, 1)</td><td class="">(2, 2)</td><td class="num">6 + 3 = 9</td><td class="num">2</td><td class="num">11</td><td class="">(2, 1)</td><td class="">ตรงกัน</td></tr><tr><td class="num">10</td><td class="">(4, 3)</td><td class="">(3, 3)</td><td class="num">8 + 2 = 10</td><td class="num">2</td><td class="num">12</td><td class="">(4, 3)</td><td class="">ตรงกัน</td></tr><tr><td class="num">11</td><td class="">(3, 1)</td><td class="">(2, 1)</td><td class="num">9 + 2 = 11</td><td class="num">1</td><td class="num">12</td><td class="">(3, 1)</td><td class="">ตรงกัน</td></tr><tr><td class="num">12</td><td class="">(4, 1)</td><td class="">(3, 1)</td><td class="num">11 + 1 = 12</td><td class="num">0</td><td class="num">12</td><td class="">(4, 1)</td><td class="">ตรงกัน</td></tr></table>
+<p class="cap">ตารางที่ 15&nbsp; เปรียบเทียบผลการคำนวณด้วยมือกับค่าที่โปรแกรมบันทึก</p><table><colgroup><col style="width:34%"><col style="width:22%"><col style="width:22%"><col style="width:22%"></colgroup><tr><th>ปริมาณ</th><th>คำนวณด้วยมือ</th><th>ค่าในไฟล์ผลลัพธ์</th><th>ผลการตรวจสอบ</th></tr><tr><td class="">ต้นทุนเส้นทาง BFS</td><td class="num">15</td><td class="num">15</td><td class="">ตรงกัน</td></tr><tr><td class="">ต้นทุนเส้นทาง A*</td><td class="num">12</td><td class="num">12</td><td class="">ตรงกัน</td></tr><tr><td class="">จำนวนโหนดที่ A* ขยาย</td><td class="num">12</td><td class="num">12</td><td class="">ตรงกัน</td></tr></table>
+<h2 id="h33"><span class="mark">@@h33@@</span>7.3 การตรวจสอบตัวชี้วัดการถึงเป้าหมาย</h2>
+<p>แถวสุดท้ายของรอบ A_star_1 บันทึกตำแหน่งบนแผนที่ (mx, my) = (3.9857, 1.0009)
+เมื่อปัดเป็นช่องได้ (4, 1) ซึ่งคือ G ความคลาดเคลื่อนที่เป้าหมายคำนวณได้ดังนี้</p>
+<pre class="eq">goal_error = √((4 − 3.9857)² + (1 − 1.0009)²) × 0.60
+           = 0.0086 m  ≈  0.009 m</pre>
+<p>ค่าที่โปรแกรมบันทึกคือ 0.009 เมตร ตรงกันเมื่อปัดเป็นทศนิยมสามตำแหน่ง</p>
+<h1 id="h34"><span class="mark">@@h34@@</span>8. อภิปรายผล (Discussion)</h1>
+<h2 id="h35"><span class="mark">@@h35@@</span>8.1 “สั้นที่สุด” ในเชิงจำนวนก้าวกับเชิงต้นทุน</h2>
+<p>ทั้งสองอัลกอริทึมให้เส้นทาง 6 ก้าวซึ่งสั้นที่สุดในเชิงจำนวนก้าว แต่ต้นทุนของ BFS (15) สูงกว่า A* (12)
+ต้นทุนของ BFS เป็นผลจากลำดับการเพิ่มเพื่อนบ้าน ไม่ใช่ผลของการพิจารณาต้นทุน เมื่อทดลองสลับลำดับเพื่อนบ้านครบทั้ง
+24 แบบ BFS ให้ต้นทุนเส้นทางที่เป็นไปได้ 13, 15 ขึ้นกับลำดับที่ใช้ ในขณะที่ A* ให้ต้นทุน 12 เสมอ
+ผลนี้ยืนยันว่าถ้าต้องการต้นทุนต่ำสุด ต้องใช้อัลกอริทึมที่นำต้นทุนมาคำนวณ เช่น A* หรือ Dijkstra</p>
+<h2 id="h36"><span class="mark">@@h36@@</span>8.2 ต้นทุนบนแผนที่ไม่ได้แปลงเป็นเวลาจริง</h2>
+<p>แม้ A* จะมีต้นทุนต่ำกว่า BFS ร้อยละ 20 แต่เวลาจริงแทบไม่ต่างกัน สาเหตุคือตัวเลขต้นทุนในใบงานเป็นค่าเชิงนามธรรม
+พื้นสนามทุกช่องเหมือนกัน หุ่นยนต์จึงใช้เวลาต่อช่องเท่ากันไม่ว่าต้นทุนจะเป็นเท่าใด
+เวลารวมขึ้นกับจำนวนก้าวและจำนวนครั้งที่หมุนตัว ซึ่งทั้งสองเส้นทางเท่ากันที่ 6 ก้าวและ 3 ครั้ง
+หากต้นทุนสะท้อนสิ่งที่วัดได้จริง เช่น พื้นผิวที่ต้องลดความเร็ว ความแตกต่างของต้นทุนจึงจะปรากฏในเวลาหรือพลังงานที่ใช้</p>
+<h2 id="h37"><span class="mark">@@h37@@</span>8.3 ความสม่ำเสมอของการเคลื่อนที่</h2>
+<p>ส่วนเบี่ยงเบนมาตรฐานของเวลาภายในอัลกอริทึมเดียวกันไม่เกิน 0.10 วินาที ความคลาดเคลื่อนที่เป้าหมายไม่เกิน 1.0 ซม.
+และทิศผิดพลาดที่เป้าหมายไม่เกิน 0.29 องศา ความสม่ำเสมอนี้มาจากการควบคุมแบบ closed-loop
+ที่ใช้ตำแหน่งและมุมที่วัดได้ในการตัดสินว่าแต่ละขั้นเสร็จแล้ว แทนการสั่งระยะทางแบบเปิดวง
+อย่างไรก็ตาม ค่าเหล่านี้วัดด้วย odometry เดียวกับที่ใช้ควบคุม จึงแสดงว่าตัวควบคุมพาหุ่นยนต์ไปถึงตำแหน่งที่ตัวเองเชื่อว่าเป็นเป้าหมาย
+แต่ไม่ได้พิสูจน์ว่าตำแหน่งจริงบนพื้นแม่นยำในระดับเดียวกัน</p>
+<h2 id="h38"><span class="mark">@@h38@@</span>8.4 จำนวนโหนดที่ขยาย</h2>
+<p>A* ขยายโหนดน้อยกว่า BFS เพียง 1 โหนด เพราะสนามมีเพียง 13 โหนด และค่า h ที่ใช้ c<sub>min</sub> = 1
+ต่ำกว่าต้นทุนเฉลี่ยจริงของแต่ละก้าว (2.31) ค่อนข้างมาก h จึงแยกโหนดที่ดีออกจากโหนดที่ไม่ดีได้ไม่ชัด
+ข้อได้เปรียบด้านจำนวนโหนดของ A* จะชัดขึ้นเมื่อสนามใหญ่ขึ้น หรือเมื่อ heuristic ใกล้เคียงต้นทุนจริงมากขึ้นโดยยังไม่ประเมินเกินจริง</p>
+<h1 id="h39"><span class="mark">@@h39@@</span>9. ข้อจำกัดและข้อเสนอแนะ (Limitations and Future Work)</h1>
+<h2 id="h40"><span class="mark">@@h40@@</span>9.1 ข้อจำกัดของการทดลอง</h2>
+<ul>
+<li><b>ตำแหน่งมาจาก odometry ของหุ่นยนต์เอง</b> ไม่มีการวัดตำแหน่งจริงบนพื้นสนาม ความคลาดเคลื่อนและระยะห่างจากเส้นทางในรายงานจึงเป็นค่าที่หุ่นยนต์ประมาณได้เอง</li>
+<li><b>จำนวนรอบน้อย</b> อัลกอริทึมละ 3 รอบ ค่าส่วนเบี่ยงเบนมาตรฐานจึงยังไม่เสถียรพอสำหรับการทดสอบทางสถิติ</li>
+<li><b>ทิศเริ่มต้นต่างกัน</b> BFS เริ่มหันทิศ E และ A* เริ่มหันทิศ S เพื่อให้ตรงกับก้าวแรก หากเริ่มทิศเดียวกัน อัลกอริทึมหนึ่งจะต้องหมุนตัวเพิ่ม</li>
+<li><b>ต้นทุนเป็นค่านามธรรม</b> ไม่มีความสัมพันธ์กับพื้นผิวหรือความยากของการเคลื่อนที่จริง จึงเปรียบเทียบผลของต้นทุนต่อเวลาจริงไม่ได้</li>
+<li><b>การตรวจจับการชนเป็นแบบทางอ้อม</b> ใช้ตำแหน่ง odometry และ ToF ด้านหน้าเพียงตัวเดียว ไม่ครอบคลุมการเฉี่ยวด้านข้างหรือด้านหลัง</li>
+<li><b>แผนที่คงที่</b> ไม่มีสิ่งกีดขวางเคลื่อนที่ และไม่มีการวางแผนใหม่ระหว่างทาง</li></ul>
+<h2 id="h41"><span class="mark">@@h41@@</span>9.2 ข้อเสนอแนะสำหรับการพัฒนาต่อ</h2>
+<ol>
+<li>วัดตำแหน่งสุดท้ายจริงด้วยตลับเมตร หรือกล้องเหนือสนาม แล้วเทียบกับค่าจาก odometry เพื่อหาความคลาดเคลื่อนจริงและปรับค่า forward_scale</li>
+<li>เพิ่มจำนวนรอบเป็นอย่างน้อย 10 รอบต่ออัลกอริทึม และเริ่มทุกรอบด้วยทิศเดียวกัน เพื่อให้เปรียบเทียบเวลาได้เป็นธรรม</li>
+<li>ให้ต้นทุนมีความหมายทางกายภาพ เช่น จำกัดความเร็วในช่องต้นทุนสูงตามสัดส่วน แล้ววัดว่า A* ประหยัดเวลาจริงได้เท่าใด</li>
+<li>เพิ่มต้นทุนของการหมุนตัวลงในการค้นหา เพราะผลในหัวข้อที่ 6.5 แสดงว่าการหมุนหนึ่งครั้งใช้เวลาเพิ่มขึ้นอย่างมีนัย</li>
+<li>เปรียบเทียบกับ Dijkstra และ Greedy Best-First Search บนสนามเดียวกัน เพื่อแสดงบทบาทของ g และ h แยกจากกัน</li></ol>
+<h1 id="h42"><span class="mark">@@h42@@</span>10. สรุปผลการทดลอง (Conclusion)</h1>
+<p>การทดลองนี้แสดงให้เห็นว่าบนสนามกริด 4×4 ที่มีสิ่งกีดขวาง 3 ช่องและต้นทุนต่อช่อง
+BFS และ A* ให้เส้นทางที่สั้นที่สุดในเชิงจำนวนก้าวเท่ากันที่ 6 ก้าว แต่ A* ให้ต้นทุนรวม 12 ต่ำกว่า BFS ที่ 15
+และขยายโหนดน้อยกว่า (12 เทียบกับ 13 โหนด) การคำนวณด้วยมือทั้งต้นทุนเส้นทางและลำดับการขยายโหนดของ A*
+ตรงกับค่าที่โปรแกรมบันทึกทุกตำแหน่ง ยืนยันความถูกต้องของการนำอัลกอริทึมไปใช้</p>
+<p>บนหุ่นยนต์จริงทั้ง 6 รอบ หุ่นยนต์เดินถึงเป้าหมายครบทุกรอบโดยไม่ตรวจพบการชนสิ่งกีดขวาง จำนวนก้าวจริงเท่ากับจำนวนก้าวที่วางแผนทุกรอบ
+เวลาเฉลี่ยของ BFS คือ 20.41 วินาที และของ A* คือ 20.58 วินาที ซึ่งแทบไม่ต่างกัน
+เพราะทั้งสองเส้นทางมีจำนวนก้าวและจำนวนการหมุนตัวเท่ากัน ขณะที่ต้นทุนในใบงานไม่ได้สะท้อนความยากของพื้นสนามจริง</p>
+<p>ข้อค้นพบสำคัญคือ การเลือกอัลกอริทึมต้องสอดคล้องกับความหมายของต้นทุน หากต้นทุนเป็นเพียงจำนวนก้าว BFS เพียงพอ
+แต่หากต้นทุนแทนสิ่งที่มีผลจริง เช่น เวลา พลังงาน หรือความเสี่ยง ต้องใช้ A* จึงจะรับประกันผลที่ดีที่สุด
+และควรรวมต้นทุนของการหมุนตัวไว้ในการค้นหาด้วย</p>
+<h1 id="h43"><span class="mark">@@h43@@</span>11. ภาคผนวก: ไฟล์ผลลัพธ์และวิธีทำซ้ำ (Appendix)</h1>
+<p class="cap">ตารางที่ 16&nbsp; ไฟล์ที่เกี่ยวข้องกับการทดลอง</p><table><colgroup><col style="width:46%"><col style="width:54%"></colgroup><tr><th>ไฟล์</th><th>เนื้อหา</th></tr><tr><td class=""><code>analyze/runs/BFS_1–3.ipynb</code></td><td class="">ข้อมูลดิบ ตัวชี้วัด และกราฟของรอบ BFS ทั้ง 3 รอบ</td></tr><tr><td class=""><code>analyze/runs/A_star_1–3.ipynb</code></td><td class="">ข้อมูลดิบ ตัวชี้วัด และกราฟของรอบ A* ทั้ง 3 รอบ</td></tr><tr><td class=""><code>analyze/load_runs.py</code></td><td class="">อ่านข้อมูลทุกรอบกลับจาก notebook</td></tr><tr><td class=""><code>analyze/make_report.py</code></td><td class="">คำนวณตัวชี้วัด สร้างกราฟ และสร้างรายงานฉบับนี้</td></tr><tr><td class=""><code>src/cost_map_panel.py</code></td><td class="">BFS, A*, ตัวควบคุมหุ่นยนต์ และหน้าจอ pygame</td></tr><tr><td class=""><code>src/run_notebook.py</code></td><td class="">บันทึกรอบการทดลองเป็น notebook</td></tr><tr><td class=""><code>calibration_output/motion_calibration.json</code></td><td class="">ค่าที่ตั้งจากแท็บ CALIBRATE</td></tr></table>
+<p>ตัวเลขทุกค่าในรายงานคำนวณจากไฟล์ใน <code>analyze/runs/</code> การสร้างรายงานซ้ำใช้คำสั่งเดียวในตัวอย่างที่ 3
+และหากมีรอบใหม่ถูกบันทึกเพิ่ม รายงานจะรวมรอบนั้นโดยอัตโนมัติ</p>
+<pre class="code">python main.py costmap              # ทดสอบในโหมดจำลอง
+python tests/test_cost_map.py       # ทดสอบ BFS, A*, การบันทึกผล</pre>
+<p class="cap">ตัวอย่างที่ 4&nbsp; คำสั่งทดสอบโปรแกรมก่อนรันบนหุ่นยนต์จริง</p></body></html>

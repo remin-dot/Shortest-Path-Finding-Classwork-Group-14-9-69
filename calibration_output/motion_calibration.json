@@ -1,0 +1,11 @@
+{
+  "cell_m": 0.6,
+  "start_heading": 270,
+  "forward_scale": 1.0,
+  "max_speed": 0.35,
+  "turn_speed": 90.0,
+  "z_sign": -1,
+  "yaw_sign": 1,
+  "y_sign": 1,
+  "tof_offset_mm": 0.0
+}
